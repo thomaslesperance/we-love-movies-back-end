@@ -5,7 +5,7 @@ const { DATABASE_URL = "" } = process.env;
 module.exports = {
   development: {
     client: "postgresql",
-    connection: {
+    connection: DATABASE_URL || {
       host: "localhost",
       port: "5432",
       user: "postgres",

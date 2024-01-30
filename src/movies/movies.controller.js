@@ -5,7 +5,7 @@ const asyncErrorBoundary = require("../errors/asyncErrorBoundary");
 //Middleware
 
 async function movieExists(req, res, next) {
-  const movie = await service.read(req.params.movieId);
+  const movie = await service.readMovies(req.params.movieId);
   if (movie) {
     res.locals.movie = movie;
     return next();

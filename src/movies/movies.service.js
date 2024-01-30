@@ -1,5 +1,4 @@
 const knex = require("../db/connection");
-
 const mapProperties = require("../utils/map-properties");
 
 const addCritic = mapProperties({
@@ -12,9 +11,9 @@ const addCritic = mapProperties({
 });
 
 function readMovies(movie_id) {
-  return knex("movies")
+  return knex("movies as m")
     .select(
-      "m.id",
+      "m.movie_id",
       "m.title",
       "m.runtime_in_minutes",
       "m.rating",
@@ -49,9 +48,43 @@ function readReviews(movie_id) {
   return knex("movies as m")
     .join("reviews as r", "m.movie_id", "r.movie_id")
     .join("critics as c", "r.critic_id", "c.critic_id")
-    .select("r.*", "c.*")
+    .select(
+      "r.review_id",
+      "r.content",
+      "r.score",
+      "r.created_at as rev_created_at",
+      "r.updated_at as rev_updated_at",
+      "r.critic_id as rev_critic_id",
+      "r.movie_id",
+      "c.*"
+    )
     .where({ "m.movie_id": movie_id })
-    .then(addCritic);
+    .then((initialArray) => initialArray.map(addCritic))
+    .then((formattedArray) => {
+      return formattedArray.map((formattedReview) => {
+        const {
+          review_id,
+          content,
+          score,
+          movie_id,
+          rev_created_at,
+          rev_updated_at,
+          critic: { critic_id },
+        } = formattedReview;
+        const { critic } = formattedReview;
+        const finalReview = {
+          review_id,
+          content,
+          score,
+          movie_id,
+          created_at: rev_created_at,
+          updated_at: rev_updated_at,
+          critic_id,
+          critic,
+        };
+        return finalReview;
+      });
+    });
 }
 
 function list(is_showing = false) {
@@ -59,7 +92,7 @@ function list(is_showing = false) {
     return knex("movies as m")
       .join("movies_theaters as mt", "m.movie_id", "mt.movie_id")
       .select(
-        "m.id",
+        "m.movie_id",
         "m.title",
         "m.runtime_in_minutes",
         "m.rating",
@@ -69,7 +102,7 @@ function list(is_showing = false) {
       .where({ "mt.is_showing": true });
   } else {
     return knex("movies").select(
-      "id",
+      "movie_id",
       "title",
       "runtime_in_minutes",
       "rating",
