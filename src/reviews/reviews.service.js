@@ -1,77 +1,115 @@
 const knex = require("../db/connection");
-const mapProperties = require("../utils/map-properties");
+// const mapProperties = require("../utils/map-properties");
 
 //
 
-const addCritic = mapProperties({
-  critic_id: "critic.critic_id",
-  preferred_name: "critic.preferred_name",
-  surname: "critic.surname",
-  organization_name: "critic.organization_name",
-  created_at: "critic.created_at",
-  updated_at: "critic.updated_at",
-});
+// const addCritic = mapProperties({
+//   critic_id: "critic.critic_id",
+//   preferred_name: "critic.preferred_name",
+//   surname: "critic.surname",
+//   organization_name: "critic.organization_name",
+//   created_at: "critic.created_at",
+//   updated_at: "critic.updated_at",
+// });
 
 function read(review_id) {
   return knex("reviews").select("*").where({ review_id }).first();
 }
 
 function update(updatedReview) {
-  const criticData = knex("critics as c")
-    .select("c.*")
-    .where({ "c.critic_id": updatedReview.critic_id })
-    .first();
+  return knex("reviews")
+    .select("*")
+    .where({ review_id: updatedReview.review_id })
+    .update(updatedReview);
+}
 
+function reformattedReview({ review_id }) {
   return knex("reviews as r")
+    .join("critics as c", "r.critic_id", "c.critic_id")
     .select(
-      "r.review_id",
-      "r.content",
-      "r.score",
-      "r.created_at as rev_created_at",
-      "r.updated_at as rev_updated_at",
-      "r.critic_id as rev_critic_id",
-      "r.movie_id"
+      "*",
+      "c.created_at as critic_created_at",
+      "c.updated_at as critic_updated_at"
     )
-    .where({ "r.review_id": updatedReview.review_id })
-    .update(updatedReview, [
-      "r.review_id",
-      "r.content",
-      "r.score",
-      "r.created_at as rev_created_at",
-      "r.updated_at as rev_updated_at",
-      "r.critic_id as rev_critic_id",
-      "r.movie_id",
-    ])
-    .then((updatedRecords) => updatedRecords[0])
-    .then((updatedRecord) => {
-      const reviewAndCritic = { ...criticData, ...updatedRecord };
-      return reviewAndCritic;
-    })
-    .then(addCritic)
-    .then((formattedReview) => {
-      const {
-        review_id,
-        content,
-        score,
-        movie_id,
-        rev_created_at,
-        rev_updated_at,
-        critic: { critic_id },
-      } = formattedReview;
-      const { critic } = formattedReview;
-      const finalReview = {
-        review_id,
-        content,
-        score,
-        movie_id,
-        created_at: rev_created_at,
-        updated_at: rev_updated_at,
-        critic_id,
-        critic,
+    .where({ review_id })
+    .first()
+    .then((r) => {
+      return {
+        review_id: r.review_id,
+        content: r.content,
+        score: r.score,
+        created_at: r.created_at,
+        updated_at: r.updated_at,
+        critic_id: r.critic_id,
+        movie_id: r.movie_id,
+        critic: {
+          critic_id: r.critic_id,
+          preferred_name: r.preferred_name,
+          surname: r.surname,
+          organization_name: r.organization_name,
+          created_at: r.critic_created_at,
+          updated_at: r.critic_updated_at,
+        },
       };
-      return finalReview;
     });
 }
+
+// function update(updatedReview) {
+//   const criticData = knex("critics as c")
+//     .select("c.*")
+//     .where({ "c.critic_id": updatedReview.critic_id })
+//     .first();
+
+//   return knex("reviews as r")
+//     .select(
+//       "r.review_id",
+//       "r.content",
+//       "r.score",
+//       "r.created_at as rev_created_at",
+//       "r.updated_at as rev_updated_at",
+//       "r.critic_id as rev_critic_id",
+//       "r.movie_id"
+//     )
+//     .where({ "r.review_id": updatedReview.review_id })
+//     .update(updatedReview, [
+//       "r.review_id",
+//       "r.content",
+//       "r.score",
+//       "r.created_at as rev_created_at",
+//       "r.updated_at as rev_updated_at",
+//       "r.critic_id as rev_critic_id",
+//       "r.movie_id",
+//     ])
+//     .then((updatedRecords) => updatedRecords[0])
+//     .then((updatedRecord) => {
+//       const reviewAndCritic = { ...criticData, ...updatedRecord };
+//       return reviewAndCritic;
+//     })
+//     .then(addCritic)
+//     .then((formattedReview) => {
+//       const {
+//         review_id,
+//         content,
+//         score,
+//         movie_id,
+//         rev_created_at,
+//         rev_updated_at,
+//         critic: { critic_id },
+//       } = formattedReview;
+//       const { critic } = formattedReview;
+//       const finalReview = {
+//         review_id,
+//         content,
+//         score,
+//         movie_id,
+//         created_at: rev_created_at,
+//         updated_at: rev_updated_at,
+//         critic_id,
+//         critic,
+//       };
+//       return finalReview;
+//     });
+// }
 
 function destroy(review_id) {
   return knex("reviews").select("*").where({ review_id }).del();
@@ -79,4 +117,9 @@ function destroy(review_id) {
 
 //
 
-module.exports = { read, update, destroy };
+module.exports = {
+  read,
+  update,
+  reformattedReview,
+  destroy,
+};
