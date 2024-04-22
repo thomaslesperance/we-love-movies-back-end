@@ -42,7 +42,7 @@ Returns all theaters currently associated with the movieId route parameter.
 Returns all reviews with associated critic data for movies associated with the movieId route parameter.
 
 
-### UPDATE /reviews/:reviewId          
+### PUT /reviews/:reviewId          
 Updates a review associated with the reviewId route parameter and returns a representation of the updated data.
 
 
